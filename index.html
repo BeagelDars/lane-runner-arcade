@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>LANE RUNNER ARCADE - 5-Lane High Speed Dodge</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="app-container">
+    <!-- Top Arcade HUD Bar -->
+    <header id="hud" class="hud-layer hidden">
+      <div class="hud-group left">
+        <div class="hud-card score-card">
+          <div class="hud-card-header">
+            <span class="hud-label">SCORE</span>
+            <span id="combo-badge" class="combo-badge hidden">x1</span>
+          </div>
+          <span id="score-display" class="hud-value arcade-digits">0</span>
+        </div>
+
+        <div class="hud-card tokens-card">
+          <span class="hud-label">ORBS</span>
+          <div class="token-value-row">
+            <span class="token-icon">&#9670;</span>
+            <span id="token-display" class="hud-value arcade-digits">0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hud-group center">
+        <!-- Jump Card -->
+        <div class="hud-card jump-card" id="hud-jump-card">
+          <div class="jump-header">
+            <span class="hud-label">JUMP OVERDRIVE</span>
+            <span id="jump-status-text" class="jump-status ready">READY [SPACE]</span>
+          </div>
+          <div class="jump-progress-bar">
+            <div id="jump-progress-fill" class="jump-progress-fill" style="width: 100%;"></div>
+            <div class="jump-glow-effect"></div>
+          </div>
+        </div>
+
+        <!-- Flight Mode Card -->
+        <div class="hud-card flight-card hidden" id="hud-flight-card">
+          <div class="flight-header">
+            <span class="flight-icon">&#10022;</span>
+            <span class="hud-label flight-label">WING FLIGHT MODE</span>
+            <span id="flight-time-text" class="flight-status">5.0s</span>
+          </div>
+          <div class="flight-progress-bar">
+            <div id="flight-progress-fill" class="flight-progress-fill" style="width: 100%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hud-group right">
+        <div class="hud-card speed-card">
+          <span class="hud-label">SPEED</span>
+          <div class="speed-value-row">
+            <span id="speed-display" class="hud-value arcade-digits">100</span>
+            <span class="hud-unit">KM/H</span>
+          </div>
+        </div>
+
+        <div class="hud-actions">
+          <button id="btn-music" class="icon-button" title="Toggle Music" aria-label="Toggle Music">
+            <svg id="icon-music-on" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M9 18V5l12-2v13"></path>
+              <circle cx="6" cy="18" r="3"></circle>
+              <circle cx="18" cy="16" r="3"></circle>
+            </svg>
+            <svg id="icon-music-off" class="hidden" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2">
+              <line x1="1" y1="1" x2="23" y2="23"></line>
+              <path d="M9 18V5l12-2v13"></path>
+              <circle cx="6" cy="18" r="3"></circle>
+              <circle cx="18" cy="16" r="3"></circle>
+            </svg>
+          </button>
+          <button id="btn-audio" class="icon-button" title="Toggle SFX" aria-label="Toggle Sound">
+            <svg id="icon-sound-on" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.08"></path>
+            </svg>
+            <svg id="icon-sound-off" class="hidden" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              <line x1="23" y1="9" x2="17" y2="15"></line>
+              <line x1="17" y1="9" x2="23" y2="15"></line>
+            </svg>
+          </button>
+          <button id="btn-pause" class="icon-button" title="Pause Game (P / Esc)" aria-label="Pause Game">
+            <svg id="icon-pause" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2">
+              <rect x="6" y="4" width="4" height="16"></rect>
+              <rect x="14" y="4" width="4" height="16"></rect>
+            </svg>
+            <svg id="icon-play" class="hidden" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Arcade Banner Popups -->
+    <div id="arcade-banner" class="arcade-banner hidden">
+      <span id="arcade-banner-text">COMBO x2!</span>
+    </div>
+
+    <!-- Canvas Viewport -->
+    <main id="game-viewport">
+      <canvas id="game-canvas"></canvas>
+
+      <!-- On-screen Arcade Controls -->
+      <div id="touch-controls" class="touch-controls">
+        <div class="touch-lane-controls">
+          <button id="touch-left" class="touch-btn touch-btn-nav" aria-label="Move Left">
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            <span class="touch-subtext">LEFT</span>
+          </button>
+          <button id="touch-jump" class="touch-btn touch-btn-jump" aria-label="Jump">
+            <div class="touch-jump-inner">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="18 15 12 9 6 15"></polyline>
+              </svg>
+              <span>JUMP AIR</span>
+            </div>
+          </button>
+          <button id="touch-right" class="touch-btn touch-btn-nav" aria-label="Move Right">
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+            <span class="touch-subtext">RIGHT</span>
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <!-- Start Overlay Screen -->
+    <div id="start-screen" class="overlay-screen active">
+      <div class="modal-card arcade-card">
+        <div class="arcade-header-glow">
+          <div class="device-pill" id="device-pill">
+            <span class="device-indicator-dot"></span>
+            <span id="device-pill-text">PC / Laptop Mode</span>
+          </div>
+          <h1 class="game-title">LANE RUNNER</h1>
+          <div class="arcade-tag">ARCADE EDITION</div>
+        </div>
+
+        <p class="game-subtitle">5 Lanes • Diagonal Steering • Wings & Jump</p>
+
+        <div class="instructions-panel">
+          <div class="control-row">
+            <div class="keys-box">
+              <span class="key-badge">A</span>
+              <span class="key-badge">D</span>
+              <span class="control-or">or</span>
+              <span class="key-badge">&larr;</span>
+              <span class="key-badge">&rarr;</span>
+            </div>
+            <span class="control-desc">Smooth Diagonal Steering</span>
+          </div>
+          <div class="control-row">
+            <div class="keys-box">
+              <span class="key-badge wide">SPACE</span>
+              <span class="control-or">or</span>
+              <span class="key-badge">W</span>
+              <span class="key-badge">&uarr;</span>
+            </div>
+            <span class="control-desc">Jump Over Traffic</span>
+          </div>
+          <div class="control-row">
+            <div class="keys-box">
+              <span class="key-badge">1</span>
+              <span class="key-badge">2</span>
+              <span class="key-badge">3</span>
+              <span class="key-badge">4</span>
+              <span class="key-badge">5</span>
+            </div>
+            <span class="control-desc">Direct Lane Select</span>
+          </div>
+        </div>
+
+        <div class="arcade-features">
+          <div class="feat-pill feat-wings">
+            <span class="feat-icon">&#10022;</span>
+            <span><strong>Wings Power-Up:</strong> Fly above traffic and score bonus points!</span>
+          </div>
+          <div class="feat-pill">
+            <span class="feat-icon">&#9670;</span>
+            <span>Collect Energy Orbs to buy car skins in the Item Shop!</span>
+          </div>
+        </div>
+
+        <div class="high-score-preview" id="start-high-score-wrapper">
+          <div class="start-stat-item">
+            <span class="preview-label">BEST RECORD</span>
+            <span id="start-high-score-val" class="preview-value arcade-digits">0</span>
+          </div>
+          <div class="start-stat-item">
+            <span class="preview-label">ORBS WALLET</span>
+            <span id="start-orbs-val" class="preview-value arcade-digits gold-text">&#9670; 0</span>
+          </div>
+        </div>
+
+        <div class="modal-buttons-row">
+          <button id="btn-start" class="btn-primary btn-arcade">
+            <span>START DRIVING</span>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+          </button>
+          <button id="btn-open-shop-menu" class="btn-shop">
+            <span>GARAGE SHOP</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Garage / Item Shop Modal -->
+    <div id="shop-screen" class="overlay-screen hidden">
+      <div class="modal-card arcade-card shop-card">
+        <div class="shop-header">
+          <div class="shop-title-row">
+            <h2 class="modal-title">CAR GARAGE</h2>
+            <div class="shop-wallet">
+              <span class="token-icon">&#9670;</span>
+              <span id="shop-wallet-val" class="arcade-digits">0</span>
+            </div>
+          </div>
+          <p class="modal-subtitle">Unlock custom car skins with Energy Orbs</p>
+        </div>
+
+        <!-- 3D/2D Rotating Skin Preview -->
+        <div class="skin-preview-stage">
+          <canvas id="skin-preview-canvas" width="300" height="150"></canvas>
+          <div class="skin-preview-details">
+            <span id="preview-skin-name" class="preview-skin-name">APEX COBALT</span>
+            <span id="preview-skin-rarity" class="preview-skin-rarity rarity-common">COMMON</span>
+          </div>
+        </div>
+
+        <!-- Skins Selection List -->
+        <div class="skins-grid" id="skins-grid">
+          <!-- Populated dynamically via JS -->
+        </div>
+
+        <div class="modal-buttons-row shop-actions">
+          <button id="btn-equip-buy" class="btn-primary btn-arcade">EQUIPPED</button>
+          <button id="btn-close-shop" class="btn-secondary">BACK</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pause Overlay Screen -->
+    <div id="pause-screen" class="overlay-screen hidden">
+      <div class="modal-card arcade-card">
+        <h2 class="modal-title">PAUSED</h2>
+        <p class="modal-subtitle">Press P or Space to resume driving</p>
+        
+        <div class="stats-grid">
+          <div class="stat-box">
+            <span class="stat-label">SCORE</span>
+            <span id="pause-score" class="stat-value arcade-digits">0</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">ENERGY ORBS</span>
+            <span id="pause-tokens" class="stat-value arcade-digits">0</span>
+          </div>
+        </div>
+
+        <div class="modal-buttons-row">
+          <button id="btn-resume" class="btn-primary btn-arcade">RESUME</button>
+          <button id="btn-restart-from-pause" class="btn-secondary">RESTART</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Game Over Overlay Screen -->
+    <div id="gameover-screen" class="overlay-screen hidden">
+      <div class="modal-card arcade-card gameover-card">
+        <div id="new-high-score-badge" class="badge-success hidden">NEW HIGH SCORE!</div>
+        <h2 class="modal-title gameover-title">CRASHED</h2>
+        <p class="modal-subtitle">Your run has ended</p>
+
+        <!-- Final Score Box -->
+        <div class="final-score-box">
+          <span class="final-score-label">YOUR SCORE</span>
+          <span id="final-score" class="final-score-value arcade-digits">0</span>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-box best-score-box">
+            <span class="stat-label">BEST SCORE</span>
+            <span id="go-best-score" class="stat-value arcade-digits">0</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">ORBS COLLECTED</span>
+            <span id="go-orbs" class="stat-value arcade-digits">&#9670; 0</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">WINGS FLOWN</span>
+            <span id="go-wings" class="stat-value arcade-digits">0</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">MAX COMBO</span>
+            <span id="go-maxcombo" class="stat-value arcade-digits">x1</span>
+          </div>
+        </div>
+
+        <div class="modal-buttons-row">
+          <button id="btn-restart" class="btn-primary btn-arcade">
+            <span>DRIVE AGAIN</span>
+            <span class="btn-shortcut">[SPACE / R]</span>
+          </button>
+          <button id="btn-open-shop-go" class="btn-shop">
+            <span>GARAGE SHOP</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/audio.js"></script>
+  <script src="js/particles.js"></script>
+  <script src="js/obstacles.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
