@@ -74,11 +74,11 @@ html, body {
   left: 50%;
   transform: translateX(-50%);
   width: calc(100% - 24px);
-  max-width: 940px;
+  max-width: 980px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   z-index: 20;
   pointer-events: none;
   transition: opacity 0.3s ease, transform 0.3s ease;
@@ -93,12 +93,12 @@ html, body {
 .hud-group {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .hud-group.center {
   flex: 1;
-  max-width: 320px;
+  max-width: 300px;
 }
 
 .hud-card {
@@ -107,7 +107,7 @@ html, body {
   -webkit-backdrop-filter: blur(14px);
   border: 1.5px solid var(--border-card);
   border-radius: var(--radius-md);
-  padding: 6px 14px;
+  padding: 5px 12px;
   box-shadow: var(--shadow-arcade);
   display: flex;
   flex-direction: column;
@@ -122,7 +122,7 @@ html, body {
 }
 
 .hud-label {
-  font-size: 0.62rem;
+  font-size: 0.6rem;
   font-weight: 800;
   letter-spacing: 0.1em;
   color: var(--text-secondary);
@@ -131,7 +131,7 @@ html, body {
 
 .arcade-digits {
   font-family: var(--font-arcade);
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   font-weight: 900;
   color: var(--text-primary);
   letter-spacing: 0.04em;
@@ -140,33 +140,51 @@ html, body {
 
 .gold-text {
   color: #d97706 !important;
+  text-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
+}
+
+.cyan-text {
+  color: #0284c7 !important;
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
 }
 
 .score-card {
-  min-width: 125px;
+  min-width: 110px;
   border-left: 3px solid var(--arcade-blue);
 }
 
+.coins-card {
+  min-width: 80px;
+  border-left: 3px solid #f59e0b;
+}
+
 .tokens-card {
-  min-width: 90px;
-  border-left: 3px solid var(--arcade-yellow);
+  min-width: 75px;
+  border-left: 3px solid #38bdf8;
 }
 
 .token-value-row {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
+}
+
+.coin-hud-icon {
+  color: #f59e0b;
+  font-size: 1.1rem;
+  line-height: 1;
+  text-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
 }
 
 .token-icon {
-  color: var(--arcade-yellow);
-  font-size: 1.1rem;
+  color: #38bdf8;
+  font-size: 1.05rem;
   line-height: 1;
-  text-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
 }
 
 .speed-card {
-  min-width: 110px;
+  min-width: 100px;
   border-left: 3px solid var(--arcade-green);
 }
 
@@ -187,7 +205,7 @@ html, body {
   background: linear-gradient(135deg, #f59e0b, #ef4444);
   color: #ffffff;
   font-family: var(--font-arcade);
-  font-size: 0.62rem;
+  font-size: 0.6rem;
   font-weight: 900;
   padding: 1px 5px;
   border-radius: 4px;
@@ -213,7 +231,7 @@ html, body {
 }
 
 .jump-status {
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   font-weight: 800;
   font-family: var(--font-arcade);
   padding: 1px 6px;
@@ -687,6 +705,16 @@ html, body {
   text-align: left;
 }
 
+.feat-coins {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.feat-coins .feat-icon {
+  color: #f59e0b;
+  font-size: 1.1rem;
+}
+
 .feat-wings {
   background: rgba(251, 191, 36, 0.12);
   border-color: rgba(251, 191, 36, 0.4);
@@ -923,7 +951,6 @@ html, body {
   border-radius: var(--radius-full);
   font-size: 0.95rem;
   font-weight: 900;
-  color: #92400e;
 }
 
 .skin-preview-stage {
@@ -1088,25 +1115,28 @@ html, body {
   .hud-layer {
     top: 8px;
     width: calc(100% - 12px);
-    gap: 6px;
+    gap: 4px;
   }
   .hud-card {
-    padding: 5px 8px;
+    padding: 4px 6px;
   }
   .arcade-digits {
-    font-size: 1.05rem;
+    font-size: 0.95rem;
   }
   .score-card {
-    min-width: 95px;
+    min-width: 85px;
   }
-  .tokens-card {
+  .coins-card {
     min-width: 65px;
   }
+  .tokens-card {
+    min-width: 55px;
+  }
   .speed-card {
-    min-width: 80px;
+    min-width: 75px;
   }
   .jump-card, .flight-card {
-    min-width: 110px;
+    min-width: 95px;
   }
   .skins-grid {
     grid-template-columns: 1fr 1fr;

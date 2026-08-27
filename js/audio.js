@@ -176,12 +176,10 @@ class SoundEngine {
     } catch (e) {}
   }
 
-  // --- Bobik Dog Bark SFX ---
   playDogBark() {
     if (this.sfxMuted || !this.ctx) return;
     try {
       const now = this.ctx.currentTime;
-      // Bark 1
       const osc1 = this.ctx.createOscillator();
       const gain1 = this.ctx.createGain();
       osc1.type = 'sawtooth';
@@ -194,7 +192,6 @@ class SoundEngine {
       osc1.start(now);
       osc1.stop(now + 0.1);
 
-      // Bark 2 (Woof!)
       const osc2 = this.ctx.createOscillator();
       const gain2 = this.ctx.createGain();
       osc2.type = 'sawtooth';
@@ -209,7 +206,6 @@ class SoundEngine {
     } catch (e) {}
   }
 
-  // --- Shop Purchase / Equip Sound ---
   playShopBuy() {
     if (this.sfxMuted || !this.ctx) return;
     try {
@@ -227,6 +223,63 @@ class SoundEngine {
         osc.start(now + i * 0.06);
         osc.stop(now + i * 0.06 + 0.2);
       });
+    } catch (e) {}
+  }
+
+  // --- Subway Surfers Escalating Pitch Coin Collect ---
+  playCoinCollect(streak = 0) {
+    if (this.sfxMuted || !this.ctx) return;
+    try {
+      const now = this.ctx.currentTime;
+      const scale = [659.25, 783.99, 880.00, 987.77, 1046.50, 1174.66, 1318.51, 1567.98];
+      const baseFreq = scale[streak % scale.length];
+
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(baseFreq, now);
+      osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.33, now + 0.07);
+
+      gain.gain.setValueAtTime(0.1, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.09);
+    } catch (e) {}
+  }
+
+  // --- Cyan Energy Orb Power Charge Ding ---
+  playOrbCollect() {
+    if (this.sfxMuted || !this.ctx) return;
+    try {
+      const now = this.ctx.currentTime;
+      const osc1 = this.ctx.createOscillator();
+      const osc2 = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc1.type = 'square';
+      osc1.frequency.setValueAtTime(440, now);
+      osc1.frequency.exponentialRampToValueAtTime(1100, now + 0.12);
+
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(880, now);
+      osc2.frequency.exponentialRampToValueAtTime(1760, now + 0.12);
+
+      gain.gain.setValueAtTime(0.12, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+
+      osc1.connect(gain);
+      osc2.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc1.start(now);
+      osc2.start(now);
+      osc1.stop(now + 0.16);
+      osc2.stop(now + 0.16);
     } catch (e) {}
   }
 
@@ -316,44 +369,6 @@ class SoundEngine {
       oscHarmonic.start(now);
       osc.stop(now + 0.16);
       oscHarmonic.stop(now + 0.16);
-    } catch (e) {}
-  }
-
-  playTokenPickup() {
-    if (this.sfxMuted || !this.ctx) return;
-    try {
-      const now = this.ctx.currentTime;
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.type = 'square';
-      osc.frequency.setValueAtTime(659.25, now);
-      osc.frequency.setValueAtTime(987.77, now + 0.05);
-      gain.gain.setValueAtTime(0.08, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-      osc.connect(gain);
-      gain.connect(this.ctx.destination);
-      osc.start(now);
-      osc.stop(now + 0.15);
-    } catch (e) {}
-  }
-
-  playJumpReady() {
-    if (this.sfxMuted || !this.ctx) return;
-    try {
-      const now = this.ctx.currentTime;
-      const notes = [523.25, 659.25, 783.99, 1046.50];
-      notes.forEach((freq, idx) => {
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(freq, now + idx * 0.04);
-        gain.gain.setValueAtTime(0.08, now + idx * 0.04);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.04 + 0.1);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(now + idx * 0.04);
-        osc.stop(now + idx * 0.04 + 0.1);
-      });
     } catch (e) {}
   }
 

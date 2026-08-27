@@ -15,7 +15,7 @@ class ParticleSystem {
   }
 
   createExhaust(x, y, isBoosting = false) {
-    if (this.particles.length > 340) return;
+    if (this.particles.length > 350) return;
     const color = isBoosting ? '#38bdf8' : '#cbd5e1';
     this.particles.push({
       type: 'smoke',
@@ -33,8 +33,7 @@ class ParticleSystem {
   }
 
   createWingVortex(leftX, rightX, y) {
-    if (this.particles.length > 340) return;
-    // Wingtip ribbon trails
+    if (this.particles.length > 350) return;
     [leftX, rightX].forEach((wx) => {
       this.particles.push({
         type: 'spark',
@@ -51,8 +50,57 @@ class ParticleSystem {
     });
   }
 
+  createCoinCollect(x, y) {
+    for (let i = 0; i < 12; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 1.8 + Math.random() * 3.5;
+      this.particles.push({
+        type: 'spark',
+        x: x,
+        y: y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        size: 2.8,
+        alpha: 1,
+        color: '#fbbf24',
+        life: 0,
+        maxLife: 0.3 + Math.random() * 0.15
+      });
+    }
+  }
+
+  createOrbCollect(x, y) {
+    for (let i = 0; i < 18; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 2 + Math.random() * 4;
+      this.particles.push({
+        type: 'spark',
+        x: x,
+        y: y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        size: 3.5,
+        alpha: 1,
+        color: '#38bdf8',
+        life: 0,
+        maxLife: 0.35 + Math.random() * 0.2
+      });
+    }
+
+    this.particles.push({
+      type: 'ring',
+      x: x,
+      y: y,
+      radius: 6,
+      maxRadius: 36,
+      alpha: 0.8,
+      color: 'rgba(56, 189, 248, 0.7)',
+      life: 0,
+      maxLife: 0.28
+    });
+  }
+
   createWingsPickup(x, y) {
-    // Glowing golden/cyan burst
     for (let i = 0; i < 28; i++) {
       const angle = (Math.PI * 2 * i) / 28;
       const speed = 2.5 + Math.random() * 6;
@@ -140,25 +188,6 @@ class ParticleSystem {
         maxSize: 10 + Math.random() * 6,
         alpha: 0.6,
         color: '#94a3b8',
-        life: 0,
-        maxLife: 0.35 + Math.random() * 0.2
-      });
-    }
-  }
-
-  createOrbCollect(x, y) {
-    for (let i = 0; i < 16; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const speed = 1.5 + Math.random() * 3.5;
-      this.particles.push({
-        type: 'spark',
-        x: x,
-        y: y,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        size: 3,
-        alpha: 1,
-        color: '#f59e0b',
         life: 0,
         maxLife: 0.35 + Math.random() * 0.2
       });

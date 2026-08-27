@@ -1,5 +1,5 @@
 /**
- * Lane Runner Arcade - Main Game Controller, Item Shop & Garage
+ * Lane Runner Arcade - Main Controller, Subway Surfers Coin Trails & Shop
  */
 
 class Game {
@@ -22,9 +22,11 @@ class Game {
     this.speed = 100;
     this.baseSpeed = 100;
     this.maxSpeed = 185;
+    this.speedBurstTimer = 0;
 
-    // Currency & Shop
-    this.totalOrbs = parseInt(localStorage.getItem('lane_runner_total_orbs') || '60', 10); // starting bonus 60 orbs
+    // Currency & Shop (Coins for Skins)
+    this.totalCoins = parseInt(localStorage.getItem('lane_runner_total_coins') || '250', 10); // starting 250 coins
+    this.runCoins = 0;
     this.unlockedSkins = JSON.parse(localStorage.getItem('lane_runner_unlocked_skins') || '["apex"]');
     this.selectedShopSkin = this.player.currentSkin || 'apex';
 
@@ -43,6 +45,7 @@ class Game {
     this.hud = document.getElementById('hud');
     this.scoreDisplay = document.getElementById('score-display');
     this.speedDisplay = document.getElementById('speed-display');
+    this.coinsDisplay = document.getElementById('coins-display');
     this.tokenDisplay = document.getElementById('token-display');
     this.comboBadge = document.getElementById('combo-badge');
 
@@ -83,12 +86,12 @@ class Game {
     this.iconPlay = document.getElementById('icon-play');
 
     this.startHighScoreVal = document.getElementById('start-high-score-val');
-    this.startOrbsVal = document.getElementById('start-orbs-val');
+    this.startCoinsVal = document.getElementById('start-coins-val');
     this.finalScoreVal = document.getElementById('final-score');
     this.goBestScoreVal = document.getElementById('go-best-score');
+    this.goCoinsVal = document.getElementById('go-coins');
     this.goOrbsVal = document.getElementById('go-orbs');
     this.goWingsVal = document.getElementById('go-wings');
-    this.goMaxComboVal = document.getElementById('go-maxcombo');
     this.newHighScoreBadge = document.getElementById('new-high-score-badge');
     this.devicePillText = document.getElementById('device-pill-text');
 
@@ -166,9 +169,9 @@ class Game {
   }
 
   updateWalletUI() {
-    if (this.startOrbsVal) this.startOrbsVal.textContent = `◆ ${this.totalOrbs.toLocaleString()}`;
-    if (this.shopWalletVal) this.shopWalletVal.textContent = this.totalOrbs.toLocaleString();
-    localStorage.setItem('lane_runner_total_orbs', this.totalOrbs.toString());
+    if (this.startCoinsVal) this.startCoinsVal.textContent = `● ${this.totalCoins.toLocaleString()}`;
+    if (this.shopWalletVal) this.shopWalletVal.textContent = this.totalCoins.toLocaleString();
+    localStorage.setItem('lane_runner_total_coins', this.totalCoins.toString());
   }
 
   resizeCanvas() {
@@ -247,7 +250,6 @@ class Game {
       this.updateAudioIcons();
     });
 
-    // Shop Open / Close Buttons
     if (this.btnOpenShopMenu) {
       this.btnOpenShopMenu.addEventListener('click', () => {
         this.sound.playClick();
@@ -314,7 +316,7 @@ class Game {
     });
   }
 
-  // --- GARAGE ITEM SHOP SYSTEM ---
+  // --- GARAGE / SHOP ---
   initShop() {
     this.selectedShopSkin = this.player.currentSkin || 'apex';
     this.renderShopGrid();
@@ -371,7 +373,7 @@ class Game {
       } else if (isUnlocked) {
         statusHtml = `<span class="skin-card-status unlocked">UNLOCKED</span>`;
       } else {
-        statusHtml = `<span class="skin-card-status price">◆ ${skin.price}</span>`;
+        statusHtml = `<span class="skin-card-status price">● ${skin.price}</span>`;
       }
 
       card.innerHTML = `
@@ -408,8 +410,8 @@ class Game {
       this.btnEquipBuy.disabled = false;
       this.btnEquipBuy.style.opacity = '1';
     } else {
-      const canAfford = this.totalOrbs >= skin.price;
-      this.btnEquipBuy.textContent = `UNLOCK (◆ ${skin.price})`;
+      const canAfford = this.totalCoins >= skin.price;
+      this.btnEquipBuy.textContent = `UNLOCK (● ${skin.price})`;
       this.btnEquipBuy.disabled = !canAfford;
       this.btnEquipBuy.style.opacity = canAfford ? '1' : '0.5';
     }
@@ -423,7 +425,6 @@ class Game {
     if (isEquipped) return;
 
     if (isUnlocked) {
-      // Equip Skin
       this.player.setSkin(this.selectedShopSkin);
       this.sound.playShopBuy();
       this.renderShopGrid();
@@ -431,9 +432,8 @@ class Game {
       if (this.selectedShopSkin === 'bobik') {
         this.sound.playDogBark();
       }
-    } else if (this.totalOrbs >= skin.price) {
-      // Purchase Skin
-      this.totalOrbs -= skin.price;
+    } else if (this.totalCoins >= skin.price) {
+      this.totalCoins -= skin.price;
       this.unlockedSkins.push(this.selectedShopSkin);
       localStorage.setItem('lane_runner_unlocked_skins', JSON.stringify(this.unlockedSkins));
       this.updateWalletUI();
@@ -466,13 +466,11 @@ class Game {
 
       ctx.clearRect(0, 0, w, h);
 
-      // Floor spotlight
       ctx.fillStyle = 'rgba(56, 189, 248, 0.15)';
       ctx.beginPath();
       ctx.ellipse(w / 2, h / 2 + 18, 48, 16, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Draw Selected Car
       ctx.save();
       ctx.translate(w / 2, h / 2 - 4);
       ctx.scale(1.15, 1.15);
@@ -489,6 +487,8 @@ class Game {
     this.score = 0;
     this.distance = 0;
     this.speed = this.baseSpeed;
+    this.speedBurstTimer = 0;
+    this.runCoins = 0;
     this.combo = 1;
     this.maxCombo = 1;
     this.comboTimer = 0;
@@ -507,6 +507,7 @@ class Game {
     if (this.shopScreen) this.shopScreen.classList.add('hidden');
     if (this.hud) this.hud.classList.remove('hidden');
 
+    if (this.coinsDisplay) this.coinsDisplay.textContent = '0';
     if (this.tokenDisplay) this.tokenDisplay.textContent = '0';
     if (this.comboBadge) this.comboBadge.classList.add('hidden');
 
@@ -527,9 +528,9 @@ class Game {
       this.sound.stopArcadeMusic();
 
       const pauseScore = document.getElementById('pause-score');
-      const pauseTokens = document.getElementById('pause-tokens');
+      const pauseCoins = document.getElementById('pause-coins');
       if (pauseScore) pauseScore.textContent = Math.floor(this.score).toLocaleString();
-      if (pauseTokens) pauseTokens.textContent = this.obstacles.collectedOrbs.toString();
+      if (pauseCoins) pauseCoins.textContent = this.runCoins.toLocaleString();
 
       if (this.pauseScreen) {
         this.pauseScreen.classList.remove('hidden');
@@ -575,6 +576,11 @@ class Game {
     this.triggerCameraShake(2.5, 0.2);
   }
 
+  triggerSpeedBurst() {
+    this.speedBurstTimer = 2.0; // 2s speed burst
+    this.triggerCameraShake(1.5, 0.15);
+  }
+
   registerNearMiss(x, y) {
     this.combo = Math.min(8, this.combo + 1);
     if (this.combo > this.maxCombo) this.maxCombo = this.combo;
@@ -596,10 +602,15 @@ class Game {
     this.score += amount;
   }
 
-  updateTokenCount(count) {
-    if (this.tokenDisplay) this.tokenDisplay.textContent = count.toString();
-    this.totalOrbs++;
+  addCoin() {
+    this.runCoins++;
+    this.totalCoins++;
+    if (this.coinsDisplay) this.coinsDisplay.textContent = this.runCoins.toString();
     this.updateWalletUI();
+  }
+
+  updateOrbCount(count) {
+    if (this.tokenDisplay) this.tokenDisplay.textContent = count.toString();
   }
 
   onCrash(obstacle) {
@@ -623,13 +634,12 @@ class Game {
 
     this.updateWalletUI();
 
-    // Safely populate Game Over stats
     setTimeout(() => {
       if (this.finalScoreVal) this.finalScoreVal.textContent = finalScoreNum.toLocaleString();
       if (this.goBestScoreVal) this.goBestScoreVal.textContent = this.highScore.toLocaleString();
+      if (this.goCoinsVal) this.goCoinsVal.textContent = `● ${this.runCoins.toLocaleString()}`;
       if (this.goOrbsVal) this.goOrbsVal.textContent = `◆ ${this.obstacles.collectedOrbs.toString()}`;
       if (this.goWingsVal) this.goWingsVal.textContent = this.obstacles.collectedWings.toString();
-      if (this.goMaxComboVal) this.goMaxComboVal.textContent = `x${this.maxCombo}`;
 
       if (this.newHighScoreBadge) {
         if (isNewHigh && finalScoreNum > 0) {
@@ -678,7 +688,14 @@ class Game {
         this.speed += dt * 1.8;
       }
 
-      const displaySpeed = this.player.isFlying ? this.speed + 35 : this.speed;
+      // Speed Burst decay from Orbs
+      let burstBonus = 0;
+      if (this.speedBurstTimer > 0) {
+        this.speedBurstTimer -= dt;
+        burstBonus = 25 * (this.speedBurstTimer / 2.0);
+      }
+
+      const displaySpeed = this.player.isFlying ? this.speed + 35 : this.speed + burstBonus;
       this.sound.updateEngine(displaySpeed);
 
       const scoreMultiplier = this.player.isFlying ? this.combo * 2.5 : this.combo;

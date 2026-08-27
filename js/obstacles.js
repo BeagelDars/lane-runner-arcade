@@ -1,31 +1,33 @@
 /**
- * Arcade Multi-Lane Traffic Manager & Procedural Formations
- * Guarantees 100% solvable paths + Wings & Orbs power-ups.
+ * Arcade Multi-Lane Traffic Manager & Subway Surfers Coin Trails
  */
 
 const VEHICLE_COLORS = [
-  { body: '#e2e8f0', roof: '#cbd5e1', accent: '#94a3b8' }, // Silver
-  { body: '#1e293b', roof: '#0f172a', accent: '#334155' }, // Midnight Slate
-  { body: '#0284c7', roof: '#0369a1', accent: '#075985' }, // Cyber Blue
-  { body: '#e11d48', roof: '#be123c', accent: '#9f1239' }, // Neon Crimson
-  { body: '#059669', roof: '#047857', accent: '#065f46' }, // Emerald
-  { body: '#d97706', roof: '#b45309', accent: '#92400e' }, // Amber
-  { body: '#7c3aed', roof: '#6d28d9', accent: '#5b21b6' }, // Royal Violet
-  { body: '#ffffff', roof: '#f1f5f9', accent: '#e2e8f0' }, // Pure White
+  { body: '#e2e8f0', roof: '#cbd5e1', accent: '#94a3b8' },
+  { body: '#1e293b', roof: '#0f172a', accent: '#334155' },
+  { body: '#0284c7', roof: '#0369a1', accent: '#075985' },
+  { body: '#e11d48', roof: '#be123c', accent: '#9f1239' },
+  { body: '#059669', roof: '#047857', accent: '#065f46' },
+  { body: '#d97706', roof: '#b45309', accent: '#92400e' },
+  { body: '#7c3aed', roof: '#6d28d9', accent: '#5b21b6' },
+  { body: '#ffffff', roof: '#f1f5f9', accent: '#e2e8f0' },
 ];
 
 class ObstacleManager {
   constructor() {
     this.obstacles = [];
-    this.collectibles = []; // Energy Orbs & Wings
+    this.collectibles = []; // Coins, Orbs & Wings
     this.spawnTimer = 0;
     this.spawnInterval = 1.15;
     this.passedCount = 0;
     this.nearMissCount = 0;
+    this.collectedCoins = 0;
     this.collectedOrbs = 0;
     this.collectedWings = 0;
+    this.coinStreak = 0;
+    this.coinStreakTimer = 0;
 
-    // Road definition
+    // Road geometry
     this.road = {
       x: 0,
       y: 0,
@@ -40,7 +42,7 @@ class ObstacleManager {
     this.waveIndex = 0;
     this.lastSafeLanes = [2];
     this.wingSpawnTimer = 0;
-    this.wingSpawnInterval = 18; // spawn wings every ~18 seconds
+    this.wingSpawnInterval = 18;
   }
 
   reset() {
@@ -50,8 +52,11 @@ class ObstacleManager {
     this.spawnInterval = 1.15;
     this.passedCount = 0;
     this.nearMissCount = 0;
+    this.collectedCoins = 0;
     this.collectedOrbs = 0;
     this.collectedWings = 0;
+    this.coinStreak = 0;
+    this.coinStreakTimer = 0;
     this.waveIndex = 0;
     this.lastSafeLanes = [2];
     this.wingSpawnTimer = 0;
@@ -81,7 +86,15 @@ class ObstacleManager {
   update(dt, playerSpeed, player) {
     this.road.stripeOffset = (this.road.stripeOffset + playerSpeed * dt * 0.9) % 60;
 
-    // Dynamic wave spawner
+    // Coin streak timer decay
+    if (this.coinStreakTimer > 0) {
+      this.coinStreakTimer -= dt;
+      if (this.coinStreakTimer <= 0) {
+        this.coinStreak = 0;
+      }
+    }
+
+    // Spawn Timers
     this.spawnTimer += dt;
     this.wingSpawnTimer += dt;
 
@@ -108,7 +121,7 @@ class ObstacleManager {
         this.passedCount++;
       }
 
-      // Near-miss check (only when not flying or airborne)
+      // Near-miss detection
       if (!obs.nearMissTriggered && !obs.hasCrashed && !player.isDead) {
         const dx = Math.abs(player.x - obs.x);
         const dy = Math.abs(player.y - obs.y);
@@ -130,19 +143,34 @@ class ObstacleManager {
       }
     }
 
-    // Update Collectibles (Orbs & Wings)
+    // Update Collectibles (Coins, Orbs & Wings)
     for (let i = this.collectibles.length - 1; i >= 0; i--) {
       const item = this.collectibles[i];
       item.y += playerSpeed * 4.5 * dt;
-      item.rotation += dt * 3;
+      item.rotation += dt * (item.type === 'coin' ? 6.0 : 3.0);
       item.hoverTime = (item.hoverTime || 0) + dt * 4;
 
       // Collection detection
       const dx = Math.abs(player.x - item.x);
       const dy = Math.abs(player.y - item.y);
+      const hitRadius = item.type === 'coin' ? 32 : 36;
 
-      if (dx < 36 && dy < 48 && !player.isDead) {
-        if (item.type === 'wings') {
+      if (dx < hitRadius && dy < 42 && !player.isDead) {
+        if (item.type === 'coin') {
+          // Collect Gold Coin (Subway Surfers Style!)
+          this.collectedCoins++;
+          this.coinStreak++;
+          this.coinStreakTimer = 0.8; // window for chain pitch climb
+
+          if (window.soundEngine) window.soundEngine.playCoinCollect(this.coinStreak);
+          if (window.particleSystem) {
+            window.particleSystem.createCoinCollect(item.x, item.y);
+          }
+          if (window.gameInstance) {
+            window.gameInstance.addCoin();
+            window.gameInstance.addScore(15);
+          }
+        } else if (item.type === 'wings') {
           // Collect Wings Power-Up!
           this.collectedWings++;
           player.activateFlight(5.5);
@@ -150,7 +178,7 @@ class ObstacleManager {
           if (window.soundEngine) window.soundEngine.playWingPickup();
           if (window.particleSystem) {
             window.particleSystem.createWingsPickup(item.x, item.y);
-            window.particleSystem.addFloatingText(item.x, item.y - 25, 'WINGS DEPLOYED! FLY!', '#fbbf24', 18);
+            window.particleSystem.addFloatingText(item.x, item.y - 25, 'WINGS FLIGHT! FLY!', '#fbbf24', 18);
           }
           if (window.gameInstance) {
             window.gameInstance.onWingsPickedUp();
@@ -158,16 +186,18 @@ class ObstacleManager {
         } else {
           // Collect Energy Orb
           this.collectedOrbs++;
-          player.reduceJumpCooldown(1.5);
+          player.reduceJumpCooldown(2.0);
 
-          if (window.soundEngine) window.soundEngine.playTokenPickup();
+          if (window.soundEngine) window.soundEngine.playOrbCollect();
           if (window.particleSystem) {
             window.particleSystem.createOrbCollect(item.x, item.y);
-            window.particleSystem.addFloatingText(item.x, item.y - 20, '+100 ORB', '#f59e0b', 14);
+            window.particleSystem.addFloatingText(item.x, item.y - 20, '+ORB JUMP BOOST!', '#38bdf8', 14);
           }
           if (window.gameInstance) {
-            window.gameInstance.addScore(100);
-            window.gameInstance.updateTokenCount(this.collectedOrbs);
+            window.gameInstance.addScore(75);
+            window.gameInstance.updateOrbCount(this.collectedOrbs);
+            // Speed boost burst on orb!
+            window.gameInstance.triggerSpeedBurst();
           }
         }
 
@@ -198,6 +228,7 @@ class ObstacleManager {
       l => l !== safeLane && (Math.random() < 0.65 ? l !== secondSafeLane : true)
     );
 
+    // Spawn traffic in blocked lanes
     for (const lane of lanesToBlock) {
       const isBlocked = this.obstacles.some(
         o => o.lane === lane && o.y < 100 && o.y > -260
@@ -207,13 +238,71 @@ class ObstacleManager {
       }
     }
 
-    // Check if time to spawn Wings Power-Up
+    // Spawn Wings occasionally
     if (this.wingSpawnTimer >= this.wingSpawnInterval) {
       this.wingSpawnTimer = 0;
       this.spawnWings(safeLane);
-    } else if (Math.random() < 0.75) {
-      this.spawnOrb(safeLane);
+    } else {
+      // Spawn Subway Surfers style Coin Trails in the safe lane(s)!
+      const coinTrailCount = 4 + Math.floor(Math.random() * 4); // 4 to 7 coins
+      this.spawnCoinTrail(safeLane, coinTrailCount);
+
+      // Also occasionally spawn an Energy Orb in secondary open path
+      if (Math.random() < 0.45 && secondSafeLane !== safeLane) {
+        this.spawnOrb(secondSafeLane);
+      }
     }
+  }
+
+  // Subway Surfers Style Elegant Coin Trail Generator
+  spawnCoinTrail(lane, count = 5) {
+    const startY = -80;
+    const spacing = 32; // elegant spacing behind each other
+
+    for (let c = 0; c < count; c++) {
+      const x = this.getLaneX(lane);
+      const y = startY - c * spacing;
+
+      this.collectibles.push({
+        type: 'coin',
+        lane: lane,
+        x: x,
+        y: y,
+        size: 11,
+        rotation: c * 0.4,
+        hoverTime: 0
+      });
+    }
+  }
+
+  spawnOrb(lane) {
+    const x = this.getLaneX(lane);
+    const y = -70;
+
+    this.collectibles.push({
+      type: 'orb',
+      lane: lane,
+      x: x,
+      y: y,
+      size: 14,
+      rotation: 0,
+      hoverTime: 0
+    });
+  }
+
+  spawnWings(lane) {
+    const x = this.getLaneX(lane);
+    const y = -80;
+
+    this.collectibles.push({
+      type: 'wings',
+      lane: lane,
+      x: x,
+      y: y,
+      size: 20,
+      rotation: 0,
+      hoverTime: 0
+    });
   }
 
   createObstacle(lane, playerSpeed, patternType) {
@@ -266,36 +355,6 @@ class ObstacleManager {
     });
   }
 
-  spawnOrb(lane) {
-    const x = this.getLaneX(lane);
-    const y = -60 - Math.random() * 40;
-
-    this.collectibles.push({
-      type: 'orb',
-      lane: lane,
-      x: x,
-      y: y,
-      size: 14,
-      rotation: 0,
-      hoverTime: 0
-    });
-  }
-
-  spawnWings(lane) {
-    const x = this.getLaneX(lane);
-    const y = -70;
-
-    this.collectibles.push({
-      type: 'wings',
-      lane: lane,
-      x: x,
-      y: y,
-      size: 20,
-      rotation: 0,
-      hoverTime: 0
-    });
-  }
-
   renderRoad(ctx) {
     const r = this.road;
 
@@ -340,25 +399,64 @@ class ObstacleManager {
     ctx.save();
 
     for (const item of this.collectibles) {
-      if (item.type === 'wings') {
+      if (item.type === 'coin') {
+        this.renderGoldCoin(ctx, item);
+      } else if (item.type === 'wings') {
         this.renderWingsPickup(ctx, item);
       } else {
-        this.renderOrbPickup(ctx, item);
+        this.renderPlasmaOrb(ctx, item);
       }
     }
 
     ctx.restore();
   }
 
-  renderOrbPickup(ctx, orb) {
+  // 3D Spinning Gold Coin
+  renderGoldCoin(ctx, coin) {
+    ctx.save();
+    ctx.translate(coin.x, coin.y);
+
+    // 3D width oscillation
+    const spinScale = Math.cos(coin.rotation);
+    const absScale = Math.max(0.12, Math.abs(spinScale));
+
+    // Outer Golden Ring
+    ctx.fillStyle = '#fbbf24';
+    ctx.strokeStyle = '#d97706';
+    ctx.lineWidth = 1.8;
+    ctx.shadowColor = '#f59e0b';
+    ctx.shadowBlur = 6;
+
+    ctx.beginPath();
+    ctx.ellipse(0, 0, coin.size * absScale, coin.size, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Inner Coin Stamp / Star
+    if (absScale > 0.45) {
+      ctx.fillStyle = '#fef08a';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, (coin.size - 3.5) * absScale, coin.size - 3.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Dollar / Star Core
+      ctx.fillStyle = '#b45309';
+      ctx.fillRect(-1.5 * absScale, -3.5, 3 * absScale, 7);
+    }
+
+    ctx.restore();
+  }
+
+  // Cyan Plasma Energy Orb
+  renderPlasmaOrb(ctx, orb) {
     ctx.save();
     ctx.translate(orb.x, orb.y);
     ctx.rotate(orb.rotation);
 
-    const pulse = 1 + Math.sin(orb.hoverTime) * 0.15;
-    ctx.strokeStyle = '#f59e0b';
-    ctx.shadowColor = '#f59e0b';
-    ctx.shadowBlur = 12;
+    const pulse = 1 + Math.sin(orb.hoverTime) * 0.18;
+    ctx.strokeStyle = '#38bdf8';
+    ctx.shadowColor = '#38bdf8';
+    ctx.shadowBlur = 14;
     ctx.lineWidth = 2.5;
 
     ctx.beginPath();
@@ -369,9 +467,9 @@ class ObstacleManager {
     ctx.closePath();
     ctx.stroke();
 
-    ctx.fillStyle = '#fef08a';
+    ctx.fillStyle = '#e0f2fe';
     ctx.beginPath();
-    ctx.arc(0, 0, orb.size * 0.45, 0, Math.PI * 2);
+    ctx.arc(0, 0, orb.size * 0.48, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.restore();
@@ -384,7 +482,7 @@ class ObstacleManager {
     ctx.save();
     ctx.translate(wings.x, wings.y + hoverY);
 
-    // Glowing Halo Ring
+    // Halo
     ctx.strokeStyle = '#fbbf24';
     ctx.shadowColor = '#fbbf24';
     ctx.shadowBlur = 16;
@@ -393,7 +491,7 @@ class ObstacleManager {
     ctx.arc(0, -14, 10, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Central Power Core
+    // Core
     ctx.fillStyle = '#38bdf8';
     ctx.shadowColor = '#38bdf8';
     ctx.shadowBlur = 12;
